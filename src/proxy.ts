@@ -1,7 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-import { getSupabasePublicConfig } from "@/lib/supabase/env";
 import type { Database } from "@/lib/supabase/database.types";
 
 const publicPrefixes = [
@@ -22,8 +21,21 @@ function isPublicPath(pathname: string) {
 }
 
 export async function proxy(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+
+  if (!url || !publishableKey) {
+    if (isPublicPath(pathname)) {
+      return NextResponse.next({ request });
+    }
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = "/sign-in";
+    redirectUrl.searchParams.set("next", pathname);
+    return NextResponse.redirect(redirectUrl);
+  }
+
   let supabaseResponse = NextResponse.next({ request });
-  const { url, publishableKey } = getSupabasePublicConfig();
 
   const supabase = createServerClient<Database>(url, publishableKey, {
     cookies: {
@@ -47,7 +59,6 @@ export async function proxy(request: NextRequest) {
 
   const { data } = await supabase.auth.getClaims();
   const signedIn = Boolean(data?.claims?.sub);
-  const { pathname } = request.nextUrl;
 
   if (!signedIn && !isPublicPath(pathname)) {
     const redirectUrl = request.nextUrl.clone();
