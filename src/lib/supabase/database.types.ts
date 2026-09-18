@@ -117,6 +117,7 @@ export type Database = {
           id: string;
           member_profile_id: string;
           status: string;
+          summary: string | null;
         };
         Insert: {
           acknowledged_at?: string | null;
@@ -126,6 +127,7 @@ export type Database = {
           id?: string;
           member_profile_id: string;
           status?: string;
+          summary?: string | null;
         };
         Update: {
           acknowledged_at?: string | null;
@@ -135,6 +137,7 @@ export type Database = {
           id?: string;
           member_profile_id?: string;
           status?: string;
+          summary?: string | null;
         };
         Relationships: [];
       };
@@ -172,6 +175,7 @@ export type Database = {
         Row: {
           created_at: string;
           created_by: string;
+          help_confirm_required: boolean;
           id: string;
           name: string;
           supported_person_name: string | null;
@@ -181,6 +185,7 @@ export type Database = {
         Insert: {
           created_at?: string;
           created_by: string;
+          help_confirm_required?: boolean;
           id?: string;
           name: string;
           supported_person_name?: string | null;
@@ -190,6 +195,7 @@ export type Database = {
         Update: {
           created_at?: string;
           created_by?: string;
+          help_confirm_required?: boolean;
           id?: string;
           name?: string;
           supported_person_name?: string | null;
@@ -995,6 +1001,10 @@ export type Database = {
       };
       revoke_invitation: {
         Args: { p_invitation_id: string };
+        Returns: undefined;
+      };
+      update_help_action: {
+        Args: { p_confirm_required: boolean; p_household_id: string };
         Returns: undefined;
       };
     };

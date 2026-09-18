@@ -51,7 +51,7 @@ export default async function TodayPage() {
         .eq("household_id", householdId),
       supabase
         .from("help_alerts")
-        .select("id, created_at, status, member_profile_id")
+        .select("id, created_at, status, member_profile_id, summary")
         .eq("household_id", householdId)
         .eq("status", "open")
         .order("created_at", { ascending: false }),
@@ -262,6 +262,7 @@ export default async function TodayPage() {
                     {profileName(alert.member_profile_id)} asked for help{" "}
                     {formatWhen(alert.created_at, timeZone)}. KindCare did not dispatch emergency
                     services.
+                    {alert.summary ? ` ${alert.summary}` : ""}
                   </p>
                   <AcknowledgeHelpButton alertId={alert.id} />
                 </li>

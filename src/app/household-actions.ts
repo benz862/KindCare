@@ -13,6 +13,8 @@ export type HouseholdFormState = {
   error?: string;
   message?: string;
   inviteUrl?: string;
+  inviteEmail?: string;
+  inviteRole?: string;
 };
 
 function formValue(formData: FormData, key: string) {
@@ -115,8 +117,41 @@ export async function createInvitation(
 
   revalidatePath("/people");
   return {
-    message: "Invitation created. Share this private link with the person you invited.",
+    message:
+      "Invitation created. KindCare does not send invitation email. Copy the link or open Mail from your iCloud mailbox.",
     inviteUrl: `${getAppUrl()}/invite/${data}`,
+    inviteEmail: parsed.data.email,
+    inviteRole: parsed.data.role,
+  };
+}
+
+export async function updateHelpAction(
+  _: HouseholdFormState,
+  formData: FormData,
+): Promise<HouseholdFormState> {
+  const context = await requireCareTeam();
+  if (context.membership.role !== "organizer" && context.membership.role !== "caregiver") {
+    return { error: "Only an organizer or caregiver can change the help action." };
+  }
+
+  const confirmRequired = formValue(formData, "helpConfirmRequired") !== "false";
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("update_help_action", {
+    p_household_id: context.membership.household.id,
+    p_confirm_required: confirmRequired,
+  });
+
+  if (error) {
+    return { error: friendlyDatabaseError(error.message) };
+  }
+
+  revalidatePath("/people");
+  revalidatePath("/settings");
+  revalidatePath("/home");
+  return {
+    message: confirmRequired
+      ? "Help alerts now ask for confirmation first."
+      : "Help alerts now send on the first tap. The member still sees 911 and people to call.",
   };
 }
 

@@ -6,11 +6,14 @@ import { BillingCard } from "@/components/billing/billing-card";
 import { AppShell } from "@/components/layout/app-shell";
 import { SupportEmail } from "@/components/brand/support-email";
 import { SupportPhone } from "@/components/brand/support-phone";
+import { HelpActionForm } from "@/components/household/help-action-form";
 import { NotificationPrefsForm } from "@/components/plan/notification-prefs-form";
 import { Card } from "@/components/ui/card";
 import { requireHousehold } from "@/lib/auth/session";
 import { loadHouseholdSubscription } from "@/lib/billing/subscription";
 import { brand } from "@/lib/copy";
+import { passwordResetCopy } from "@/lib/mail-copy";
+import { canManagePlan } from "@/lib/roles";
 import { isStripeConfigured } from "@/lib/stripe/env";
 import { createClient } from "@/lib/supabase/server";
 
@@ -24,6 +27,7 @@ export default async function SettingsPage({
   const context = await requireHousehold();
   const { billing } = await searchParams;
   const organizer = context.membership.role === "organizer";
+  const canConfigureHelp = canManagePlan(context.membership.role);
   const supabase = await createClient();
   const [{ data: profile }, subscription] = await Promise.all([
     supabase
@@ -85,8 +89,9 @@ export default async function SettingsPage({
         <Card>
           <h2 className="font-serif text-2xl font-semibold text-navy">Notices</h2>
           <p className="mt-2 leading-7 text-ink/75">
-            In-app notices stay inside KindCare. Email is a saved preference only. Production is
-            hosted at {brand.domain}.
+            In-app notices stay inside KindCare. Email is a saved preference only. Household
+            mailboxes are on iCloud. KindCare does not send invitation, help, or update email.
+            Production is hosted at {brand.domain}.
           </p>
           <div className="mt-5">
             <NotificationPrefsForm
@@ -96,8 +101,30 @@ export default async function SettingsPage({
           </div>
         </Card>
         <Card>
+          <h2 className="font-serif text-2xl font-semibold text-navy">Help action</h2>
+          <p className="mt-2 leading-7 text-ink/75">
+            Trusted contacts are on the People page. Choose whether the member confirms before
+            KindCare tells the household. KindCare never calls 911.
+          </p>
+          {canConfigureHelp ? (
+            <div className="mt-5">
+              <HelpActionForm
+                key={String(context.membership.household.helpConfirmRequired)}
+                confirmRequired={context.membership.household.helpConfirmRequired}
+              />
+            </div>
+          ) : (
+            <p className="mt-4 leading-7 text-ink/75">
+              {context.membership.household.helpConfirmRequired
+                ? "Help alerts currently ask for confirmation first."
+                : "Help alerts currently send on the first tap."}
+            </p>
+          )}
+        </Card>
+        <Card>
           <h2 className="font-serif text-2xl font-semibold text-navy">Help and limits</h2>
           <p className="mt-2 leading-7 text-ink/75">{brand.safety}</p>
+          <p className="mt-3 leading-7 text-ink/75">{passwordResetCopy}</p>
           <p className="mt-3 leading-7 text-ink/75">
             For product questions, call KindCare customer support at <SupportPhone showLabel={false} />{" "}
             or write to <SupportEmail />. Billing: <SupportEmail address={brand.billingEmail} />.

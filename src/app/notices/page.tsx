@@ -29,7 +29,9 @@ export default async function NoticesPage() {
       <p className="text-xs font-bold tracking-[0.16em] text-navy/60">NOTICES</p>
       <h1 className="mt-3 font-serif text-4xl font-semibold text-navy">In-app notices</h1>
       <p className="mt-3 max-w-2xl leading-7 text-ink/75">
-        These stay inside KindCare. Email preferences are stored in Settings and are not sent yet.
+        These stay inside KindCare. KindCare does not send invitation, help, or update email.
+        Password reset mail comes from the sign-in service and does not include household
+        details. Email preferences are stored in Settings.
       </p>
       <Card className="mt-8">
         {(notices ?? []).length === 0 ? (

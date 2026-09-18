@@ -4,16 +4,48 @@ import { useActionState } from "react";
 
 import { createInvitation, type HouseholdFormState } from "@/app/household-actions";
 import { CopyLink } from "@/components/household/copy-link";
-import { Button } from "@/components/ui/button";
+import { CopyText } from "@/components/household/copy-text";
+import { Button, ButtonAnchor } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/field";
 import { Select } from "@/components/ui/select";
-import type { HouseholdRole } from "@/lib/roles";
+import { invitationMailto, invitationMessage } from "@/lib/mail-copy";
+import { isInviteRole, roleLabels, type HouseholdRole } from "@/lib/roles";
 
 const initial: HouseholdFormState = {};
 
-export function InviteForm({ role }: { role: HouseholdRole }) {
+export function InviteForm({
+  role,
+  householdName,
+  fromName,
+}: {
+  role: HouseholdRole;
+  householdName: string;
+  fromName: string;
+}) {
   const [state, action, pending] = useActionState(createInvitation, initial);
   const canInviteCaregiver = role === "organizer";
+  const inviteRole =
+    state.inviteRole && isInviteRole(state.inviteRole) ? state.inviteRole : "helper";
+  const roleLabel = roleLabels[inviteRole];
+  const mail =
+    state.inviteUrl && state.inviteEmail
+      ? invitationMessage({
+          householdName,
+          roleLabel,
+          inviteUrl: state.inviteUrl,
+          fromName,
+        })
+      : null;
+  const mailto =
+    state.inviteUrl && state.inviteEmail
+      ? invitationMailto({
+          email: state.inviteEmail,
+          householdName,
+          roleLabel,
+          inviteUrl: state.inviteUrl,
+          fromName,
+        })
+      : null;
 
   return (
     <form action={action} className="grid gap-4">
@@ -38,6 +70,17 @@ export function InviteForm({ role }: { role: HouseholdRole }) {
         </p>
       ) : null}
       {state.inviteUrl ? <CopyLink url={state.inviteUrl} /> : null}
+      {mailto && mail ? (
+        <div className="grid gap-3">
+          <ButtonAnchor href={mailto} variant="secondary">
+            Open in Mail
+          </ButtonAnchor>
+          <CopyText
+            value={`Subject: ${mail.subject}\n\n${mail.body}`}
+            label="Copy invitation email"
+          />
+        </div>
+      ) : null}
       <Button type="submit" disabled={pending}>
         {pending ? "Creating…" : "Create invitation"}
       </Button>

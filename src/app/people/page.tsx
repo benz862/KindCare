@@ -4,13 +4,15 @@ import { InviteForm } from "@/components/household/invite-form";
 import { RevokeInviteButton } from "@/components/household/revoke-invite-button";
 import { ContactForm } from "@/components/household/contact-form";
 import { DeleteContactButton } from "@/components/household/delete-contact-button";
+import { HelpActionForm } from "@/components/household/help-action-form";
+import { HelpMailTemplates } from "@/components/household/help-mail-templates";
 import { AppShell } from "@/components/layout/app-shell";
 import { Card } from "@/components/ui/card";
 import { requireCareTeam } from "@/lib/auth/session";
-import { isHouseholdRole, isInviteRole, roleLabels } from "@/lib/roles";
+import { canManagePlan, isHouseholdRole, isInviteRole, roleLabels } from "@/lib/roles";
 import { createClient } from "@/lib/supabase/server";
 import { brand } from "@/lib/copy";
-import { phoneHref } from "@/lib/phone";
+import { phoneHref, smsHref } from "@/lib/phone";
 
 export const metadata: Metadata = { title: "People" };
 
@@ -20,6 +22,9 @@ export default async function PeoplePage() {
   const householdId = context.membership.household.id;
   const canInvite =
     context.membership.role === "organizer" || context.membership.role === "caregiver";
+  const canConfigureHelp = canManagePlan(context.membership.role);
+  const supported =
+    context.membership.household.supportedPersonName ?? "the person you support";
 
   const [{ data: members }, { data: invitations }, { data: profiles }, { data: contacts }] =
     await Promise.all([
@@ -90,11 +95,15 @@ export default async function PeoplePage() {
           <Card>
             <h2 className="font-serif text-2xl font-semibold text-navy">Invite someone</h2>
             <p className="mt-2 leading-7 text-ink/75">
-              KindCare does not send invitation email yet. Copy the private link and send it
-              yourself. For product questions, write to {brand.supportEmail}.
+              KindCare does not send invitation email. Copy the private link, or open Mail and send
+              it from your iCloud mailbox. For product questions, write to {brand.supportEmail}.
             </p>
             <div className="mt-5">
-              <InviteForm role={context.membership.role} />
+              <InviteForm
+                role={context.membership.role}
+                householdName={context.membership.household.name}
+                fromName={context.displayName}
+              />
             </div>
           </Card>
         ) : null}
@@ -127,6 +136,43 @@ export default async function PeoplePage() {
         ) : null}
 
         <Card>
+          <h2 className="font-serif text-2xl font-semibold text-navy">Help action</h2>
+          <p className="mt-2 leading-7 text-ink/75">
+            Configure trusted contacts below, then choose whether “I need help” asks first or
+            sends an in-app alert on the first tap. KindCare never calls 911 or dispatches help.
+          </p>
+          {canConfigureHelp ? (
+            <div className="mt-5">
+              <HelpActionForm
+                key={String(context.membership.household.helpConfirmRequired)}
+                confirmRequired={context.membership.household.helpConfirmRequired}
+              />
+            </div>
+          ) : (
+            <p className="mt-4 leading-7 text-ink/75">
+              {context.membership.household.helpConfirmRequired
+                ? "Help alerts currently ask for confirmation first."
+                : "Help alerts currently send on the first tap."}{" "}
+              An organizer or caregiver can change this.
+            </p>
+          )}
+        </Card>
+
+        <Card>
+          <h2 className="font-serif text-2xl font-semibold text-navy">Help messages</h2>
+          <p className="mt-2 leading-7 text-ink/75">
+            These templates are for your iCloud mailbox or Messages. KindCare stores in-app
+            alerts only and does not send this mail for you.
+          </p>
+          <div className="mt-5">
+            <HelpMailTemplates
+              memberName={supported}
+              householdName={context.membership.household.name}
+            />
+          </div>
+        </Card>
+
+        <Card>
           <h2 className="font-serif text-2xl font-semibold text-navy">Contacts</h2>
           <p className="mt-2 leading-7 text-ink/75">
             These people can be called from Talk to someone and I need help. They cannot open
@@ -152,12 +198,22 @@ export default async function PeoplePage() {
                         {contact.is_emergency ? " · Help panel" : ""}
                       </p>
                       {href ? (
-                        <a
-                          className="text-sm font-semibold text-navy underline-offset-4 hover:underline"
-                          href={href}
-                        >
-                          Call
-                        </a>
+                        <span className="mt-1 flex gap-3">
+                          <a
+                            className="text-sm font-semibold text-navy underline-offset-4 hover:underline"
+                            href={href}
+                          >
+                            Call
+                          </a>
+                          {contact.phone ? (
+                            <a
+                              className="text-sm font-semibold text-navy underline-offset-4 hover:underline"
+                              href={smsHref(contact.phone) ?? undefined}
+                            >
+                              Text
+                            </a>
+                          ) : null}
+                        </span>
                       ) : null}
                     </div>
                     {canInvite ? <DeleteContactButton contactId={contact.id} /> : null}

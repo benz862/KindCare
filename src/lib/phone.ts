@@ -7,3 +7,11 @@ export function phoneHref(phone: string) {
   if (digits.length === 11 && digits.startsWith("1")) return `tel:+${digits}`;
   return `tel:${digits}`;
 }
+
+export function smsHref(phone: string, body?: string) {
+  const tel = phoneHref(phone);
+  if (!tel) return null;
+  const number = tel.replace(/^tel:/, "");
+  if (!body) return `sms:${number}`;
+  return `sms:${number}?body=${encodeURIComponent(body)}`;
+}

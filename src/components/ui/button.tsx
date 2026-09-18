@@ -1,6 +1,6 @@
 import { cva, type VariantProps } from "class-variance-authority";
 import Link from "next/link";
-import type { ButtonHTMLAttributes, ComponentProps } from "react";
+import type { AnchorHTMLAttributes, ButtonHTMLAttributes, ComponentProps } from "react";
 
 import { cn } from "@/lib/cn";
 
@@ -50,4 +50,10 @@ export function ButtonLink({
   return (
     <Link href={href} className={cn(buttonStyles({ variant, size }), className)} {...props} />
   );
+}
+
+type ButtonAnchorProps = AnchorHTMLAttributes<HTMLAnchorElement> & VariantProps<typeof buttonStyles>;
+
+export function ButtonAnchor({ className, variant, size, ...props }: ButtonAnchorProps) {
+  return <a className={cn(buttonStyles({ variant, size }), className)} {...props} />;
 }

@@ -8,6 +8,7 @@ export type HouseholdSummary = {
   name: string;
   supportedPersonName: string | null;
   timezone: string;
+  helpConfirmRequired: boolean;
 };
 
 export type HouseholdContext = {
@@ -46,7 +47,7 @@ export async function getHouseholdContext(): Promise<HouseholdContext | null> {
   if (membershipRows?.household_id) {
     const { data: householdRow } = await supabase
       .from("households")
-      .select("id, name, supported_person_name, timezone")
+      .select("id, name, supported_person_name, timezone, help_confirm_required")
       .eq("id", membershipRows.household_id)
       .maybeSingle();
     if (householdRow) {
@@ -55,6 +56,7 @@ export async function getHouseholdContext(): Promise<HouseholdContext | null> {
         name: householdRow.name,
         supportedPersonName: householdRow.supported_person_name,
         timezone: householdRow.timezone || "America/New_York",
+        helpConfirmRequired: householdRow.help_confirm_required ?? true,
       };
     }
   }

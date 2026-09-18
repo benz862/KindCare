@@ -59,7 +59,7 @@ export default async function MemberHomePage() {
       supabase.from("household_members").select("profile_id, role").eq("household_id", householdId).eq("status", "active"),
       supabase
         .from("help_alerts")
-        .select("id, created_at, status")
+        .select("id, created_at, status, summary")
         .eq("household_id", householdId)
         .eq("member_profile_id", context.userId)
         .eq("status", "open")
@@ -242,7 +242,15 @@ export default async function MemberHomePage() {
             includeInTalk: contact.include_in_talk,
             isEmergency: contact.is_emergency,
           }))}
-          openAlert={alerts?.[0] ? { createdAt: alerts[0].created_at } : null}
+          openAlert={
+            alerts?.[0]
+              ? { createdAt: alerts[0].created_at, summary: alerts[0].summary }
+              : null
+          }
+          confirmRequired={context.membership.household.helpConfirmRequired}
+          memberName={context.displayName}
+          householdName={context.membership.household.name}
+          timeZone={timeZone}
         />
       </div>
     </AppShell>
