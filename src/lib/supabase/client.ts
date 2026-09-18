@@ -5,5 +5,7 @@ import { getSupabasePublicConfig } from "@/lib/supabase/env";
 
 export function createClient() {
   const { url, publishableKey } = getSupabasePublicConfig();
-  return createBrowserClient<Database>(url, publishableKey);
+  return createBrowserClient<Database>(url, publishableKey, {
+    auth: { experimental: { passkey: true } },
+  });
 }

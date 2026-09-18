@@ -13,6 +13,7 @@ import {
 import { createHousehold, updateHousehold, type HouseholdFormState } from "@/app/household-actions";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/field";
+import { PasskeySignIn } from "@/components/auth/passkey-controls";
 
 const authInitial: AuthFormState = {};
 const householdInitial: HouseholdFormState = {};
@@ -63,6 +64,7 @@ export function SignInForm({
       <Button type="submit" disabled={pending}>
         {pending ? "Signing in…" : "Sign in securely"}
       </Button>
+      <PasskeySignIn next={next} />
       {!compact ? (
         <p className="text-sm text-navy/75">
           New to KindCare?{" "}

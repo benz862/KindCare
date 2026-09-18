@@ -12,6 +12,7 @@ const publicPrefixes = [
   "/terms",
   "/invite",
   "/auth/callback",
+  "/api/stripe",
 ];
 
 function isPublicPath(pathname: string) {

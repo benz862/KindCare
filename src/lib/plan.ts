@@ -18,6 +18,7 @@ export type DayItem = {
   assignedTo?: string | null;
   doseId?: string;
   occurrenceId?: string;
+  routineId?: string;
   eventId?: string;
 };
 
@@ -102,6 +103,7 @@ export async function loadRangeItems(
       status: item.status,
       assignedTo: item.assigned_to,
       occurrenceId: item.id,
+      routineId: item.routine_id,
     })),
     ...(doses ?? []).map((item) => ({
       id: `dose-${item.id}`,

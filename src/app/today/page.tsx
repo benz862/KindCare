@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { BillingBanner } from "@/components/billing/billing-banner";
 import { AcknowledgeHelpButton } from "@/components/household/acknowledge-help-button";
 import { AppShell } from "@/components/layout/app-shell";
 import { DayItemList } from "@/components/plan/day-item-list";
@@ -8,6 +9,7 @@ import { ResolveRequestButton } from "@/components/plan/plan-buttons";
 import { Card } from "@/components/ui/card";
 import { ButtonLink } from "@/components/ui/button";
 import { requireCareTeam } from "@/lib/auth/session";
+import { loadHouseholdSubscription } from "@/lib/billing/subscription";
 import { runDueDeliveries } from "@/lib/connection";
 import { brand } from "@/lib/copy";
 import { loadRangeItems, nextOpenItem } from "@/lib/plan";
@@ -28,7 +30,7 @@ export default async function TodayPage() {
   const today = ymdInZone(new Date(), timeZone);
   const canEdit = canManagePlan(context.membership.role);
 
-  const [{ byDay }, { data: deliveries }, { data: notes }, { data: alerts }, { data: profiles }, { data: requests }, { data: notices }] =
+  const [{ byDay }, { data: deliveries }, { data: notes }, { data: alerts }, { data: profiles }, { data: requests }, { data: notices }, subscription] =
     await Promise.all([
       loadRangeItems(supabase, householdId, timeZone, today, today),
       supabase
@@ -60,6 +62,7 @@ export default async function TodayPage() {
         .select("id")
         .eq("profile_id", context.userId)
         .is("read_at", null),
+      loadHouseholdSubscription(supabase, householdId),
     ]);
 
   const profileName = (id: string) =>
@@ -94,6 +97,10 @@ export default async function TodayPage() {
       </p>
 
       <div className="mt-8 grid gap-5">
+        <BillingBanner
+          organizer={context.membership.role === "organizer"}
+          subscription={subscription}
+        />
         <Card>
           <h2 className="font-serif text-2xl font-semibold text-navy">Next planned item</h2>
           {nextItem ? (
@@ -123,6 +130,7 @@ export default async function TodayPage() {
             empty="No medication times, reminders, appointments, or notes are on today."
             canEditEvents
             showCaregiverNote={canEdit}
+            canStopRoutines={canEdit}
           />
         </Card>
         <Card>

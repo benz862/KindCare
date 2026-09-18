@@ -3,7 +3,17 @@ import { calendarKindLabels, doseStatusLabels, occurrenceStatusLabels } from "@/
 import { formatClock } from "@/lib/time";
 import { DoseActions } from "@/components/plan/dose-actions";
 import { OccurrenceActions } from "@/components/plan/occurrence-actions";
-import { CompleteTaskButton, DeleteEventButton } from "@/components/plan/plan-buttons";
+import { CompleteTaskButton, DeleteEventButton, StopRoutineButton } from "@/components/plan/plan-buttons";
+import { cn } from "@/lib/cn";
+
+export function calendarItemTone(item: DayItem) {
+  if (item.source === "dose") return "border-l-spark bg-spark/10";
+  if (item.source === "routine") return "border-l-teal bg-teal/10";
+  if (item.source === "note") return "border-l-violet-500 bg-violet-50";
+  if (item.detail === "appointment") return "border-l-navy bg-blue-50";
+  if (item.detail === "task") return "border-l-amber-500 bg-amber-50";
+  return "border-l-slate-400 bg-slate-50";
+}
 
 export function DayItemList({
   items,
@@ -12,6 +22,7 @@ export function DayItemList({
   size = "care",
   canEditEvents = false,
   showCaregiverNote = false,
+  canStopRoutines = false,
 }: {
   items: DayItem[];
   timeZone: string;
@@ -19,6 +30,7 @@ export function DayItemList({
   size?: "care" | "member";
   canEditEvents?: boolean;
   showCaregiverNote?: boolean;
+  canStopRoutines?: boolean;
 }) {
   if (items.length === 0) {
     return <p className={size === "member" ? "mt-3 text-lg leading-8 text-ink/75" : "mt-2 leading-7 text-ink/75"}>{empty}</p>;
@@ -27,7 +39,7 @@ export function DayItemList({
   return (
     <ol className="mt-4 grid gap-3">
       {items.map((item) => (
-        <li key={item.id} className="rounded-2xl bg-mist px-4 py-3">
+        <li key={item.id} className={cn("rounded-2xl border-l-4 px-4 py-3", calendarItemTone(item))}>
           <p className={size === "member" ? "text-xl font-semibold text-navy" : "font-semibold text-navy"}>
             {formatClock(item.at, timeZone)} · {item.title}
           </p>
@@ -60,6 +72,11 @@ export function DayItemList({
           {item.eventId && canEditEvents ? (
             <div className="mt-2">
               <DeleteEventButton eventId={item.eventId} />
+            </div>
+          ) : null}
+          {item.routineId && canStopRoutines ? (
+            <div className="mt-2">
+              <StopRoutineButton routineId={item.routineId} />
             </div>
           ) : null}
         </li>

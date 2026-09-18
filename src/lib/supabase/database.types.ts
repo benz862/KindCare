@@ -285,6 +285,39 @@ export type Database = {
         };
         Relationships: [];
       };
+      companion_messages: {
+        Row: {
+          caregiver_summary: string | null;
+          content: string;
+          created_at: string;
+          household_id: string;
+          id: string;
+          member_profile_id: string;
+          needs_attention: boolean;
+          role: string;
+        };
+        Insert: {
+          caregiver_summary?: string | null;
+          content: string;
+          created_at?: string;
+          household_id: string;
+          id?: string;
+          member_profile_id: string;
+          needs_attention?: boolean;
+          role: string;
+        };
+        Update: {
+          caregiver_summary?: string | null;
+          content?: string;
+          created_at?: string;
+          household_id?: string;
+          id?: string;
+          member_profile_id?: string;
+          needs_attention?: boolean;
+          role?: string;
+        };
+        Relationships: [];
+      };
       in_app_notifications: {
         Row: {
           body: string;
@@ -641,6 +674,66 @@ export type Database = {
             referencedColumns: ["id"];
           },
         ];
+      };
+      stripe_webhook_events: {
+        Row: {
+          created_at: string;
+          id: string;
+          type: string;
+        };
+        Insert: {
+          created_at?: string;
+          id: string;
+          type: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          type?: string;
+        };
+        Relationships: [];
+      };
+      subscriptions: {
+        Row: {
+          cancel_at_period_end: boolean;
+          created_at: string;
+          current_period_end: string | null;
+          household_id: string;
+          id: string;
+          status: string;
+          stripe_customer_id: string | null;
+          stripe_price_id: string | null;
+          stripe_subscription_id: string | null;
+          trial_end: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          cancel_at_period_end?: boolean;
+          created_at?: string;
+          current_period_end?: string | null;
+          household_id: string;
+          id?: string;
+          status: string;
+          stripe_customer_id?: string | null;
+          stripe_price_id?: string | null;
+          stripe_subscription_id?: string | null;
+          trial_end?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          cancel_at_period_end?: boolean;
+          created_at?: string;
+          current_period_end?: string | null;
+          household_id?: string;
+          id?: string;
+          status?: string;
+          stripe_customer_id?: string | null;
+          stripe_price_id?: string | null;
+          stripe_subscription_id?: string | null;
+          trial_end?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [];
       };
       voice_notes: {
         Row: {
