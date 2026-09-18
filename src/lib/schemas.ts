@@ -216,11 +216,82 @@ export const medicationPlanSchema = z.object({
 
 export const memberRequestSchema = z.object({
   kind: z.enum(requestKinds, { error: "Choose what you need." }),
+  label: z
+    .string()
+    .trim()
+    .min(1, "Name this request.")
+    .max(80, "Use a shorter request name.")
+    .optional(),
   message: z
     .string()
     .trim()
     .max(500, "Keep that note a little shorter.")
     .optional(),
+});
+
+export const wellbeingFeelings = ["doing_well", "okay", "would_like_to_talk"] as const;
+
+export const wellbeingCheckinSchema = z.object({
+  feeling: z.enum(wellbeingFeelings, { error: "Choose how you are doing." }),
+  note: z
+    .string()
+    .trim()
+    .max(500, "Keep that note a little shorter.")
+    .optional(),
+});
+
+export const requestPresetSchema = z.object({
+  label: z
+    .string()
+    .trim()
+    .min(1, "Name this button.")
+    .max(80, "Use a shorter button name."),
+  kind: z.enum(requestKinds, { error: "Choose what this request is like." }),
+});
+
+export const momentSchema = z
+  .object({
+    body: z
+      .string()
+      .trim()
+      .max(500, "Keep that note a little shorter.")
+      .optional(),
+    photoPath: z
+      .string()
+      .trim()
+      .max(500)
+      .optional(),
+  })
+  .refine((value) => Boolean(value.body || value.photoPath), {
+    message: "Write a short note or add a photo.",
+  });
+
+export const handoffSchema = z.object({
+  body: z
+    .string()
+    .trim()
+    .min(1, "Write what changed today.")
+    .max(2000, "Keep that handoff a little shorter."),
+  assignmentTitle: z
+    .string()
+    .trim()
+    .max(80, "Use a shorter assignment.")
+    .optional(),
+  assignedTo: z.string().optional(),
+});
+
+const optionalPrep = z
+  .string()
+  .trim()
+  .max(2000, "Keep that appointment note a little shorter.")
+  .optional();
+
+export const appointmentPrepSchema = z.object({
+  eventId: z.uuid().optional(),
+  questions: optionalPrep,
+  documentsToBring: optionalPrep,
+  transportPlan: optionalPrep,
+  followUpTasks: optionalPrep,
 });
 
 export const notificationPrefSchema = z.object({

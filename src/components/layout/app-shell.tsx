@@ -39,10 +39,14 @@ export function AppShell({ children, displayName, role, householdName }: AppShel
                   <NavLink href="/messages">Messages</NavLink>
                   <NavLink href="/calendar">Calendar</NavLink>
                   <NavLink href="/plan">Plan</NavLink>
+                  <NavLink href="/moments">Moments</NavLink>
                   <NavLink href="/people">People</NavLink>
                 </>
               ) : (
-                <NavLink href="/home">Home</NavLink>
+                <>
+                  <NavLink href="/home">Home</NavLink>
+                  <NavLink href="/moments">Moments</NavLink>
+                </>
               )}
               <NavLink href="/notices">Notices</NavLink>
               <NavLink href="/settings">Settings</NavLink>

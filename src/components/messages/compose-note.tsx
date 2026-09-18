@@ -27,9 +27,11 @@ type Recipient = {
 export function ComposeNote({
   householdId,
   recipients,
+  memberReply = false,
 }: {
   householdId: string;
   recipients: Recipient[];
+  memberReply?: boolean;
 }) {
   const router = useRouter();
   const [file, setFile] = useState<File | null>(null);
@@ -110,7 +112,7 @@ export function ComposeNote({
 
   return (
     <form action={onSubmit} className="grid gap-4">
-      <Field label="Who is this for?">
+      <Field label={memberReply ? "Who should receive your reply?" : "Who is this for?"}>
         <Select name="recipientId" required defaultValue={recipients[0]?.id}>
           {recipients.map((person) => (
             <option key={person.id} value={person.id}>
@@ -125,16 +127,14 @@ export function ComposeNote({
           setDurationSeconds(nextDuration);
         }}
       />
-      <Field label="Title (optional)">
-        <Input name="title" maxLength={80} placeholder="A morning hello" />
-      </Field>
+      {!memberReply ? <Field label="Title (optional)"><Input name="title" maxLength={80} placeholder="A morning hello" /></Field> : null}
       <Field
         label="Written note or transcript (optional)"
         hint="A written version helps if someone cannot listen right now."
       >
         <Textarea name="bodyText" maxLength={2000} />
       </Field>
-      <fieldset className="grid gap-3">
+      {!memberReply ? <fieldset className="grid gap-3">
         <legend className="text-sm font-semibold text-ink">When should it arrive?</legend>
         <label className="flex items-center gap-3 text-sm font-normal text-ink">
           <input
@@ -156,8 +156,8 @@ export function ComposeNote({
           />
           Schedule for later
         </label>
-      </fieldset>
-      {when === "later" ? (
+      </fieldset> : null}
+      {!memberReply && when === "later" ? (
         <>
           <Field label="Date and time">
             <Input name="deliverAt" type="datetime-local" required={when === "later"} />
@@ -183,7 +183,7 @@ export function ComposeNote({
         </p>
       ) : null}
       <Button type="submit" disabled={pending || recipients.length === 0}>
-        {pending ? "Saving…" : when === "now" ? "Send note" : "Schedule note"}
+        {pending ? "Saving…" : memberReply ? "Send voice reply" : when === "now" ? "Send note" : "Schedule note"}
       </Button>
     </form>
   );

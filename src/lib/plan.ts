@@ -8,6 +8,13 @@ import {
 
 type Client = SupabaseClient<Database>;
 
+export type AppointmentPrep = {
+  questions: string | null;
+  documentsToBring: string | null;
+  transportPlan: string | null;
+  followUpTasks: string | null;
+};
+
 export type DayItem = {
   id: string;
   at: string;
@@ -20,7 +27,14 @@ export type DayItem = {
   occurrenceId?: string;
   routineId?: string;
   eventId?: string;
+  prep?: AppointmentPrep | null;
 };
+
+export function hasAppointmentPrep(prep?: AppointmentPrep | null) {
+  return Boolean(
+    prep && (prep.questions || prep.documentsToBring || prep.transportPlan || prep.followUpTasks),
+  );
+}
 
 export async function loadRangeItems(
   supabase: Client,
@@ -30,7 +44,7 @@ export async function loadRangeItems(
   endYmd: string,
 ) {
   const window = utcWindowForYmds(startYmd, endYmd);
-  const [{ data: events }, { data: occurrences }, { data: doses }, { data: plans }, { data: routines }, { data: deliveries }, { data: notes }] =
+  const [{ data: events }, { data: occurrences }, { data: doses }, { data: plans }, { data: routines }, { data: deliveries }, { data: notes }, { data: preps }] =
     await Promise.all([
       supabase
         .from("calendar_events")
@@ -70,6 +84,10 @@ export async function loadRangeItems(
         .lte("deliver_at", window.end)
         .order("deliver_at"),
       supabase.from("voice_notes").select("id, title").eq("household_id", householdId),
+      supabase
+        .from("appointment_preparations")
+        .select("event_id, questions, documents_to_bring, transport_plan, follow_up_tasks")
+        .eq("household_id", householdId),
     ]);
 
   const routineTitle = (id: string) =>
@@ -83,6 +101,16 @@ export async function loadRangeItems(
   };
   const noteTitle = (id: string) =>
     (notes ?? []).find((item) => item.id === id)?.title || "Scheduled note";
+  const prepFor = (eventId: string): AppointmentPrep | null => {
+    const prep = (preps ?? []).find((item) => item.event_id === eventId);
+    if (!prep) return null;
+    return {
+      questions: prep.questions,
+      documentsToBring: prep.documents_to_bring,
+      transportPlan: prep.transport_plan,
+      followUpTasks: prep.follow_up_tasks,
+    };
+  };
 
   const items: DayItem[] = [
     ...(events ?? []).map((event) => ({
@@ -94,6 +122,7 @@ export async function loadRangeItems(
       status: event.status,
       assignedTo: event.assigned_to,
       eventId: event.id,
+      prep: event.kind === "appointment" ? prepFor(event.id) : null,
     })),
     ...(occurrences ?? []).map((item) => ({
       id: `routine-${item.id}`,

@@ -3,6 +3,7 @@ import { calendarKindLabels, doseStatusLabels, occurrenceStatusLabels } from "@/
 import { formatClock } from "@/lib/time";
 import { DoseActions } from "@/components/plan/dose-actions";
 import { OccurrenceActions } from "@/components/plan/occurrence-actions";
+import { AppointmentPrepForm, AppointmentPrepReadout } from "@/components/plan/event-form";
 import { CompleteTaskButton, DeleteEventButton, StopRoutineButton } from "@/components/plan/plan-buttons";
 import { cn } from "@/lib/cn";
 
@@ -68,6 +69,12 @@ export function DayItemList({
                 <CompleteTaskButton eventId={item.eventId} />
               ) : null}
             </div>
+          ) : null}
+          {item.eventId && item.detail === "appointment" ? (
+            <>
+              <AppointmentPrepReadout prep={item.prep} size={size === "member" ? "member" : "care"} />
+              {canEditEvents ? <AppointmentPrepForm eventId={item.eventId} prep={item.prep} /> : null}
+            </>
           ) : null}
           {item.eventId && canEditEvents ? (
             <div className="mt-2">

@@ -467,6 +467,7 @@ export type Database = {
           household_id: string;
           id: string;
           kind: string;
+          label: string | null;
           member_profile_id: string;
           message: string | null;
           resolved_at: string | null;
@@ -478,6 +479,7 @@ export type Database = {
           household_id: string;
           id?: string;
           kind: string;
+          label?: string | null;
           member_profile_id: string;
           message?: string | null;
           resolved_at?: string | null;
@@ -489,11 +491,210 @@ export type Database = {
           household_id?: string;
           id?: string;
           kind?: string;
+          label?: string | null;
           member_profile_id?: string;
           message?: string | null;
           resolved_at?: string | null;
           resolved_by?: string | null;
           status?: string;
+        };
+        Relationships: [];
+      };
+      appointment_preparations: {
+        Row: {
+          documents_to_bring: string | null;
+          event_id: string;
+          follow_up_tasks: string | null;
+          household_id: string;
+          questions: string | null;
+          transport_plan: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          documents_to_bring?: string | null;
+          event_id: string;
+          follow_up_tasks?: string | null;
+          household_id: string;
+          questions?: string | null;
+          transport_plan?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          documents_to_bring?: string | null;
+          event_id?: string;
+          follow_up_tasks?: string | null;
+          household_id?: string;
+          questions?: string | null;
+          transport_plan?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      handoff_acks: {
+        Row: {
+          handoff_id: string;
+          household_id: string;
+          profile_id: string;
+          read_at: string;
+        };
+        Insert: {
+          handoff_id: string;
+          household_id: string;
+          profile_id: string;
+          read_at?: string;
+        };
+        Update: {
+          handoff_id?: string;
+          household_id?: string;
+          profile_id?: string;
+          read_at?: string;
+        };
+        Relationships: [];
+      };
+      handoff_assignments: {
+        Row: {
+          assigned_to: string | null;
+          created_at: string;
+          done: boolean;
+          done_at: string | null;
+          done_by: string | null;
+          handoff_id: string;
+          household_id: string;
+          id: string;
+          title: string;
+        };
+        Insert: {
+          assigned_to?: string | null;
+          created_at?: string;
+          done?: boolean;
+          done_at?: string | null;
+          done_by?: string | null;
+          handoff_id: string;
+          household_id: string;
+          id?: string;
+          title: string;
+        };
+        Update: {
+          assigned_to?: string | null;
+          created_at?: string;
+          done?: boolean;
+          done_at?: string | null;
+          done_by?: string | null;
+          handoff_id?: string;
+          household_id?: string;
+          id?: string;
+          title?: string;
+        };
+        Relationships: [];
+      };
+      handoffs: {
+        Row: {
+          author_id: string;
+          body: string;
+          created_at: string;
+          household_id: string;
+          id: string;
+        };
+        Insert: {
+          author_id: string;
+          body: string;
+          created_at?: string;
+          household_id: string;
+          id?: string;
+        };
+        Update: {
+          author_id?: string;
+          body?: string;
+          created_at?: string;
+          household_id?: string;
+          id?: string;
+        };
+        Relationships: [];
+      };
+      moments: {
+        Row: {
+          author_id: string;
+          body: string | null;
+          created_at: string;
+          household_id: string;
+          id: string;
+          photo_path: string | null;
+        };
+        Insert: {
+          author_id: string;
+          body?: string | null;
+          created_at?: string;
+          household_id: string;
+          id?: string;
+          photo_path?: string | null;
+        };
+        Update: {
+          author_id?: string;
+          body?: string | null;
+          created_at?: string;
+          household_id?: string;
+          id?: string;
+          photo_path?: string | null;
+        };
+        Relationships: [];
+      };
+      request_presets: {
+        Row: {
+          active: boolean;
+          created_at: string;
+          created_by: string;
+          household_id: string;
+          id: string;
+          kind: string;
+          label: string;
+          sort_order: number;
+        };
+        Insert: {
+          active?: boolean;
+          created_at?: string;
+          created_by: string;
+          household_id: string;
+          id?: string;
+          kind: string;
+          label: string;
+          sort_order?: number;
+        };
+        Update: {
+          active?: boolean;
+          created_at?: string;
+          created_by?: string;
+          household_id?: string;
+          id?: string;
+          kind?: string;
+          label?: string;
+          sort_order?: number;
+        };
+        Relationships: [];
+      };
+      wellbeing_checkins: {
+        Row: {
+          created_at: string;
+          feeling: string;
+          household_id: string;
+          id: string;
+          member_profile_id: string;
+          note: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          feeling: string;
+          household_id: string;
+          id?: string;
+          member_profile_id: string;
+          note?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          feeling?: string;
+          household_id?: string;
+          id?: string;
+          member_profile_id?: string;
+          note?: string | null;
         };
         Relationships: [];
       };

@@ -3,6 +3,11 @@ import Link from "next/link";
 
 import { BillingBanner } from "@/components/billing/billing-banner";
 import { AcknowledgeHelpButton } from "@/components/household/acknowledge-help-button";
+import {
+  AcknowledgeHandoffButton,
+  CompleteAssignmentButton,
+  HandoffForm,
+} from "@/components/household/handoff-form";
 import { AppShell } from "@/components/layout/app-shell";
 import { DayItemList } from "@/components/plan/day-item-list";
 import { ResolveRequestButton } from "@/components/plan/plan-buttons";
@@ -12,8 +17,8 @@ import { requireCareTeam } from "@/lib/auth/session";
 import { loadHouseholdSubscription } from "@/lib/billing/subscription";
 import { runDueDeliveries } from "@/lib/connection";
 import { brand } from "@/lib/copy";
-import { loadRangeItems, nextOpenItem } from "@/lib/plan";
-import { requestKindLabels } from "@/lib/plan-copy";
+import { loadHouseholdPeople, loadRangeItems, nextOpenItem } from "@/lib/plan";
+import { requestKindLabels, wellbeingFeelingLabels } from "@/lib/plan-copy";
 import { canManagePlan } from "@/lib/roles";
 import { createClient } from "@/lib/supabase/server";
 import { formatClock, formatWhen, ymdInZone } from "@/lib/time";
@@ -53,7 +58,7 @@ export default async function TodayPage() {
       supabase.from("profiles").select("id, display_name"),
       supabase
         .from("member_requests")
-        .select("id, kind, message, created_at, member_profile_id, status")
+        .select("id, kind, label, message, created_at, member_profile_id, status")
         .eq("household_id", householdId)
         .eq("status", "open")
         .order("created_at", { ascending: false }),
@@ -63,6 +68,31 @@ export default async function TodayPage() {
         .eq("profile_id", context.userId)
         .is("read_at", null),
       loadHouseholdSubscription(supabase, householdId),
+    ]);
+  const [{ data: checkins }, { data: handoffs }, { data: assignments }, { data: acks }, people] =
+    await Promise.all([
+      supabase
+        .from("wellbeing_checkins")
+        .select("id, feeling, note, created_at, member_profile_id")
+        .eq("household_id", householdId)
+        .order("created_at", { ascending: false })
+        .limit(5),
+      supabase
+        .from("handoffs")
+        .select("id, body, author_id, created_at")
+        .eq("household_id", householdId)
+        .order("created_at", { ascending: false })
+        .limit(8),
+      supabase
+        .from("handoff_assignments")
+        .select("id, handoff_id, title, assigned_to, done")
+        .eq("household_id", householdId)
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("handoff_acks")
+        .select("handoff_id, profile_id")
+        .eq("household_id", householdId),
+      loadHouseholdPeople(supabase, householdId),
     ]);
 
   const profileName = (id: string) =>
@@ -76,6 +106,7 @@ export default async function TodayPage() {
     .filter((item) => item.status === "delivered")
     .sort((a, b) => new Date(b.deliver_at).getTime() - new Date(a.deliver_at).getTime())[0];
   const unread = notices?.length ?? 0;
+  const latestCheckin = checkins?.[0] ?? null;
 
   return (
     <AppShell
@@ -102,6 +133,71 @@ export default async function TodayPage() {
           subscription={subscription}
         />
         <Card>
+          <h2 className="font-serif text-2xl font-semibold text-navy">Today’s check-in</h2>
+          {latestCheckin ? (
+            <p className="mt-2 leading-7 text-ink/75">
+              {profileName(latestCheckin.member_profile_id)} said{" "}
+              {wellbeingFeelingLabels[latestCheckin.feeling as keyof typeof wellbeingFeelingLabels] ??
+                latestCheckin.feeling}{" "}
+              {formatWhen(latestCheckin.created_at, timeZone)}. This is a communication prompt, not a
+              health assessment.
+              {latestCheckin.note ? ` “${latestCheckin.note}”` : ""}
+            </p>
+          ) : (
+            <p className="mt-2 leading-7 text-ink/75">
+              No check-in yet today. KindCare is not monitoring anyone.
+            </p>
+          )}
+        </Card>
+        <Card>
+          <h2 className="font-serif text-2xl font-semibold text-navy">What changed today</h2>
+          <p className="mt-2 leading-7 text-ink/75">
+            A short handoff for helpers. This is household coordination, not a clinical record.
+          </p>
+          {(handoffs ?? []).length === 0 ? (
+            <p className="mt-4 leading-7 text-ink/75">No handoff notes yet.</p>
+          ) : (
+            <ul className="mt-4 grid gap-3">
+              {(handoffs ?? []).map((handoff) => {
+                const assignment = (assignments ?? []).find((item) => item.handoff_id === handoff.id);
+                const readers = (acks ?? [])
+                  .filter((ack) => ack.handoff_id === handoff.id)
+                  .map((ack) => profileName(ack.profile_id));
+                const acknowledged = (acks ?? []).some(
+                  (ack) => ack.handoff_id === handoff.id && ack.profile_id === context.userId,
+                );
+                return (
+                  <li key={handoff.id} className="rounded-2xl bg-mist px-4 py-3">
+                    <p className="text-sm text-navy/70">
+                      {profileName(handoff.author_id)} · {formatWhen(handoff.created_at, timeZone)}
+                    </p>
+                    <p className="mt-2 leading-7 text-ink">{handoff.body}</p>
+                    {assignment ? (
+                      <p className="mt-2 text-sm text-navy/80">
+                        Assignment: {assignment.title}
+                        {assignment.assigned_to ? ` · ${profileName(assignment.assigned_to)}` : ""}
+                        {assignment.done ? " · done" : " · still open"}
+                      </p>
+                    ) : null}
+                    <p className="mt-2 text-sm text-navy/70">
+                      {readers.length ? `Read by ${readers.join(", ")}.` : "No one has acknowledged this yet."}
+                    </p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {acknowledged ? null : <AcknowledgeHandoffButton handoffId={handoff.id} />}
+                      {assignment && !assignment.done ? (
+                        <CompleteAssignmentButton assignmentId={assignment.id} />
+                      ) : null}
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+          <div className="mt-5">
+            <HandoffForm people={people.filter((person) => person.role !== "member")} />
+          </div>
+        </Card>
+        <Card>
           <h2 className="font-serif text-2xl font-semibold text-navy">Next planned item</h2>
           {nextItem ? (
             <p className="mt-2 leading-7 text-ink/75">
@@ -119,6 +215,9 @@ export default async function TodayPage() {
             </ButtonLink>
             <ButtonLink href="/calendar" variant="secondary">
               Open calendar
+            </ButtonLink>
+            <ButtonLink href="/moments" variant="secondary">
+              Family moments
             </ButtonLink>
           </div>
         </Card>
@@ -184,7 +283,9 @@ export default async function TodayPage() {
                   <div>
                     <p className="font-semibold text-navy">
                       {profileName(request.member_profile_id)} ·{" "}
-                      {requestKindLabels[request.kind as keyof typeof requestKindLabels] ?? request.kind}
+                      {request.label ||
+                        requestKindLabels[request.kind as keyof typeof requestKindLabels] ||
+                        request.kind}
                     </p>
                     {request.message ? <p className="leading-7 text-ink/75">{request.message}</p> : null}
                     <p className="text-sm text-navy/70">{formatWhen(request.created_at, timeZone)}</p>

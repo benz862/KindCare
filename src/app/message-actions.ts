@@ -18,13 +18,13 @@ export async function createVoiceNote(input: unknown): Promise<MessageFormState>
     return { error: firstIssue(parsed.error) };
   }
 
-  const context = await requireCareTeam();
+  const context = await requireHousehold();
   const householdId = context.membership.household.id;
   const supabase = await createClient();
 
   const { data: recipient } = await supabase
     .from("household_members")
-    .select("profile_id")
+    .select("profile_id, role")
     .eq("household_id", householdId)
     .eq("profile_id", parsed.data.recipientId)
     .eq("status", "active")
@@ -32,6 +32,13 @@ export async function createVoiceNote(input: unknown): Promise<MessageFormState>
 
   if (!recipient) {
     return { error: "Choose someone in this household." };
+  }
+  const memberReply = context.membership.role === "member";
+  if (memberReply && !["organizer", "caregiver", "helper"].includes(recipient.role)) {
+    return { error: "Choose someone on your care team." };
+  }
+  if (memberReply && (!parsed.data.sendNow || parsed.data.recurrence !== "none")) {
+    return { error: "Member voice replies are sent now." };
   }
 
   if (parsed.data.storagePath) {

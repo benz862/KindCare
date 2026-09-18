@@ -13,9 +13,22 @@ export const routineKindLabels = {
 
 export const requestKindLabels = {
   call_me: "Please call me",
-  groceries: "Groceries",
-  ride: "A ride",
-  something_else: "Something else",
+  groceries: "I need groceries",
+  ride: "I need a ride",
+  something_else: "I need help with something",
+} as const;
+
+export const defaultRequestButtons = [
+  { kind: "call_me" as const, label: requestKindLabels.call_me },
+  { kind: "groceries" as const, label: requestKindLabels.groceries },
+  { kind: "ride" as const, label: requestKindLabels.ride },
+  { kind: "something_else" as const, label: requestKindLabels.something_else },
+];
+
+export const wellbeingFeelingLabels = {
+  doing_well: "I’m doing well",
+  okay: "I’m okay",
+  would_like_to_talk: "I’d like to talk",
 } as const;
 
 export const weekdayLabels = [

@@ -2,14 +2,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { EventForm } from "@/components/plan/event-form";
-import { DayItemList } from "@/components/plan/day-item-list";
+import { DayItemList, calendarItemTone } from "@/components/plan/day-item-list";
 import { AppShell } from "@/components/layout/app-shell";
 import { Card } from "@/components/ui/card";
 import { ButtonLink } from "@/components/ui/button";
 import { requireHousehold } from "@/lib/auth/session";
 import { runDueDeliveries } from "@/lib/connection";
 import { loadHouseholdPeople, loadRangeItems } from "@/lib/plan";
-import { canEditCalendar, isCareTeamRole } from "@/lib/roles";
+import { canEditCalendar, canManagePlan, isCareTeamRole } from "@/lib/roles";
 import { createClient } from "@/lib/supabase/server";
 import {
   addDaysYmd,
@@ -104,6 +104,17 @@ export default async function CalendarPage({
         </div>
       ) : null}
 
+      {careTeam ? (
+        <div className="mt-5 flex flex-wrap gap-x-4 gap-y-2 text-sm text-navy/75" aria-label="Calendar color guide">
+          <Legend tone="bg-spark" label="Medication" />
+          <Legend tone="bg-navy" label="Appointment" />
+          <Legend tone="bg-teal" label="Reminder" />
+          <Legend tone="bg-violet-500" label="Voice note" />
+          <Legend tone="bg-amber-500" label="Task" />
+          <span>Color is paired with a written label for clarity.</span>
+        </div>
+      ) : null}
+
       <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
         <h2 className="font-serif text-2xl font-semibold text-navy">{heading}</h2>
         <div className="flex gap-2">
@@ -130,6 +141,7 @@ export default async function CalendarPage({
               empty="Nothing is on this day yet."
               canEditEvents={canEdit}
               showCaregiverNote={canEdit}
+              canStopRoutines={canManagePlan(context.membership.role)}
             />
           </Card>
         ) : null}
@@ -150,7 +162,7 @@ export default async function CalendarPage({
                       <li className="text-sm text-navy/60">Quiet</li>
                     ) : (
                       items.slice(0, 4).map((item) => (
-                        <li key={item.id} className="text-sm text-ink/80">
+                        <li key={item.id} className={cn("rounded-lg border-l-4 px-2 py-1 text-sm text-ink/80", calendarItemTone(item))}>
                           {item.title}
                         </li>
                       ))
@@ -186,7 +198,7 @@ export default async function CalendarPage({
                   >
                     <p className="text-sm font-semibold">{Number(ymd.slice(8))}</p>
                     {items.slice(0, 3).map((item) => (
-                      <p key={item.id} className="truncate text-xs text-ink/75">
+                      <p key={item.id} className={cn("mt-1 truncate rounded border-l-3 px-1.5 py-0.5 text-xs text-ink/75", calendarItemTone(item))}>
                         {item.title}
                       </p>
                     ))}
@@ -213,6 +225,10 @@ export default async function CalendarPage({
       </div>
     </AppShell>
   );
+}
+
+function Legend({ tone, label }: { tone: string; label: string }) {
+  return <span className="inline-flex items-center gap-2"><span className={cn("h-3 w-3 rounded-full", tone)} aria-hidden="true" />{label}</span>;
 }
 
 function MemberAgenda({

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import { AppShell } from "@/components/layout/app-shell";
 import { MedicationForm } from "@/components/plan/medication-form";
+import { RequestPresetForm, RemovePresetButton } from "@/components/plan/request-preset-form";
 import { RoutineForm } from "@/components/plan/routine-form";
 import { StopPlanButton, StopRoutineButton } from "@/components/plan/plan-buttons";
 import { Card } from "@/components/ui/card";
@@ -9,7 +10,7 @@ import { requireCareTeam } from "@/lib/auth/session";
 import { runDueDeliveries } from "@/lib/connection";
 import { brand } from "@/lib/copy";
 import { loadHouseholdPeople } from "@/lib/plan";
-import { recurrenceLabels, routineKindLabels, weekdayLabels } from "@/lib/plan-copy";
+import { recurrenceLabels, requestKindLabels, routineKindLabels, weekdayLabels } from "@/lib/plan-copy";
 import { canManagePlan } from "@/lib/roles";
 import { createClient } from "@/lib/supabase/server";
 
@@ -24,7 +25,7 @@ export default async function PlanPage() {
   const people = await loadHouseholdPeople(supabase, householdId);
   const nameFor = (id: string) => people.find((person) => person.id === id)?.name ?? "KindCare member";
 
-  const [{ data: routines }, { data: plans }] = await Promise.all([
+  const [{ data: routines }, { data: plans }, { data: presets }] = await Promise.all([
     supabase
       .from("routines")
       .select("id, title, kind, local_time, recurrence, days_of_week, start_on, end_on, assigned_to, active, notes")
@@ -36,6 +37,12 @@ export default async function PlanPage() {
       .select(
         "id, name, strength_label, amount_text, times, days_of_week, start_on, end_on, member_profile_id, reminder_text, refill_note, active",
       )
+      .eq("household_id", householdId)
+      .eq("active", true)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("request_presets")
+      .select("id, label, kind, active")
       .eq("household_id", householdId)
       .eq("active", true)
       .order("created_at", { ascending: false }),
@@ -120,6 +127,36 @@ export default async function PlanPage() {
           {canEdit ? (
             <div className="mt-6">
               <MedicationForm people={people} />
+            </div>
+          ) : null}
+        </Card>
+
+        <Card>
+          <h2 className="font-serif text-2xl font-semibold text-navy">One-tap request buttons</h2>
+          <p className="mt-2 leading-7 text-ink/75">
+            Home already includes Please call me, I need groceries, I need a ride, and I need help
+            with something. Extra buttons you add here appear on the member home.
+          </p>
+          {(presets ?? []).length === 0 ? (
+            <p className="mt-4 leading-7 text-ink/75">No extra buttons yet.</p>
+          ) : (
+            <ul className="mt-4 grid gap-3">
+              {(presets ?? []).map((preset) => (
+                <li key={preset.id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-mist px-4 py-3">
+                  <p className="font-semibold text-navy">
+                    {preset.label}
+                    <span className="ml-2 text-sm font-normal text-navy/70">
+                      {requestKindLabels[preset.kind as keyof typeof requestKindLabels] ?? preset.kind}
+                    </span>
+                  </p>
+                  {canEdit ? <RemovePresetButton presetId={preset.id} /> : null}
+                </li>
+              ))}
+            </ul>
+          )}
+          {canEdit ? (
+            <div className="mt-6">
+              <RequestPresetForm />
             </div>
           ) : null}
         </Card>
