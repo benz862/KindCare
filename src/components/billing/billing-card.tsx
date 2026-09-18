@@ -42,9 +42,8 @@ export function BillingCard({
       <h2 className="font-serif text-2xl font-semibold text-navy">Household billing</h2>
       <p className="mt-2 leading-7 text-ink/75">
         The household organizer is the billing owner. KindCare uses Stripe Checkout and the Stripe
-        customer portal. Card details never enter KindCare. Stripe calculates sales tax at checkout
-        from the organizer’s address, in places where SkillBinder is registered to collect tax.
-        Subscription status is written only by Stripe webhooks.
+        customer portal. Card details never enter KindCare. KindCare does not calculate or collect
+        sales tax at checkout. Subscription status is written only by Stripe webhooks.
       </p>
       {message ? (
         <p className="mt-4 rounded-xl bg-mist px-3 py-2 text-sm text-navy" role="status">

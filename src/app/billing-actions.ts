@@ -64,7 +64,7 @@ export async function startCheckout(
     customer_update: returningCustomer ? { address: "auto", name: "auto" } : undefined,
     allow_promotion_codes: true,
     billing_address_collection: returningCustomer ? "required" : undefined,
-    automatic_tax: { enabled: true },
+    automatic_tax: { enabled: false },
     integration_identifier: `kindcare-household-${randomBytes(4).toString("hex")}`,
     metadata: {
       household_id: context.membership.household.id,
