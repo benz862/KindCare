@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { friendlyDatabaseError } from "@/lib/auth/errors";
-import { requireCareTeam, requireHousehold } from "@/lib/auth/session";
+import { patientScope, requireCareTeam, requireHousehold } from "@/lib/auth/session";
 import { firstIssue, memberRequestSchema, requestPresetSchema } from "@/lib/schemas";
 import { createClient } from "@/lib/supabase/server";
 
@@ -40,6 +40,7 @@ export async function createMemberRequest(
   const supabase = await createClient();
   const { error } = await supabase.from("member_requests").insert({
     household_id: context.membership.household.id,
+    patient_id: patientScope(context).patient_id,
     member_profile_id: context.userId,
     kind: parsed.data.kind,
     label: parsed.data.label || null,
@@ -100,6 +101,7 @@ export async function createRequestPreset(
   const supabase = await createClient();
   const { error } = await supabase.from("request_presets").insert({
     household_id: context.membership.household.id,
+    patient_id: context.activePatient.id,
     created_by: context.userId,
     label: parsed.data.label,
     kind: parsed.data.kind,

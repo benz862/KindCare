@@ -16,11 +16,11 @@ import {
 } from "@/lib/moment-storage";
 
 export function ComposeMoment({
-  householdId,
+  patientId,
   authorId,
   size = "care",
 }: {
-  householdId: string;
+  patientId: string;
   authorId: string;
   size?: "care" | "member";
 }) {
@@ -50,7 +50,7 @@ export function ComposeMoment({
           setPending(false);
           return;
         }
-        const path = momentObjectPath(householdId, authorId, crypto.randomUUID(), type);
+        const path = momentObjectPath(patientId, authorId, crypto.randomUUID(), type);
         if (!path) {
           setError("That photo could not be saved.");
           setPending(false);

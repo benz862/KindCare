@@ -18,12 +18,12 @@ export function extensionForImageType(type: string) {
 }
 
 export function momentObjectPath(
-  householdId: string,
+  patientId: string,
   authorId: string,
   momentId: string,
   type: string,
 ) {
   const extension = extensionForImageType(type);
   if (!extension) return null;
-  return `${householdId}/${authorId}/${momentId}.${extension}`;
+  return `${patientId}/${authorId}/${momentId}.${extension}`;
 }

@@ -41,6 +41,7 @@ export async function createHandoff(
     .from("handoffs")
     .insert({
       household_id: householdId,
+      patient_id: context.activePatient.id,
       author_id: context.userId,
       body: parsed.data.body,
     })
@@ -54,6 +55,7 @@ export async function createHandoff(
   if (parsed.data.assignmentTitle) {
     const { error: assignmentError } = await supabase.from("handoff_assignments").insert({
       household_id: householdId,
+      patient_id: context.activePatient.id,
       handoff_id: data.id,
       title: parsed.data.assignmentTitle,
       assigned_to: parsed.data.assignedTo || null,
@@ -75,6 +77,7 @@ export async function acknowledgeHandoff(formData: FormData) {
     {
       handoff_id: handoffId,
       household_id: context.membership.household.id,
+      patient_id: context.activePatient.id,
       profile_id: context.userId,
     },
     { onConflict: "handoff_id,profile_id" },

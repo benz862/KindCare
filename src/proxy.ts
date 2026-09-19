@@ -10,6 +10,7 @@ const publicPrefixes = [
   "/reset-password",
   "/privacy",
   "/terms",
+  "/setup",
   "/invite",
   "/auth/callback",
   "/api/stripe",

@@ -60,7 +60,7 @@ export const kindCarePlans: KindCarePlan[] = [
   },
 ];
 
-export { formatUsd } from "@/lib/billing/money";
+export { formatUsd } from "./money.ts";
 
 export function planForPriceId(priceId: string | null | undefined) {
   if (!priceId) return null;

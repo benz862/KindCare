@@ -40,6 +40,7 @@ export async function createContact(
   const supabase = await createClient();
   const { error } = await supabase.from("contacts").insert({
     household_id: context.membership.household.id,
+    patient_id: context.activePatient.id,
     created_by: context.userId,
     name: parsed.data.name,
     phone: parsed.data.phone || null,

@@ -20,6 +20,10 @@ export async function createVoiceNote(input: unknown): Promise<MessageFormState>
 
   const context = await requireHousehold();
   const householdId = context.membership.household.id;
+  const patientId = context.activePatient?.id;
+  if (!patientId) {
+    return { error: "Choose a care recipient first." };
+  }
   const supabase = await createClient();
 
   const { data: recipient } = await supabase
@@ -45,7 +49,7 @@ export async function createVoiceNote(input: unknown): Promise<MessageFormState>
     const allowed = /^[0-9a-f-]{36}\/[0-9a-f-]{36}\.(webm|m4a|mp3|ogg|wav)$/i;
     if (
       !allowed.test(parsed.data.storagePath) ||
-      !parsed.data.storagePath.startsWith(`${householdId}/`)
+      !parsed.data.storagePath.startsWith(`${patientId}/`)
     ) {
       return { error: "That recording could not be saved." };
     }
@@ -65,6 +69,7 @@ export async function createVoiceNote(input: unknown): Promise<MessageFormState>
     .from("voice_notes")
     .insert({
       household_id: householdId,
+      patient_id: patientId,
       author_id: context.userId,
       recipient_id: parsed.data.recipientId,
       title: parsed.data.title || null,
@@ -81,6 +86,7 @@ export async function createVoiceNote(input: unknown): Promise<MessageFormState>
 
   const { error: deliveryError } = await supabase.from("scheduled_deliveries").insert({
     household_id: householdId,
+    patient_id: patientId,
     voice_note_id: note.id,
     deliver_at: deliverAt,
     recurrence: parsed.data.recurrence,

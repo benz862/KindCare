@@ -24,6 +24,14 @@ export const metadata: Metadata = {
     template: `%s · ${brand.name}`,
   },
   description: `${brand.tagline} ${brand.name} by ${brand.owner} provides supportive companionship and household care coordination.`,
+  appleWebApp: {
+    capable: true,
+    title: brand.name,
+    statusBarStyle: "default",
+  },
+  icons: {
+    apple: "/icon.png",
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

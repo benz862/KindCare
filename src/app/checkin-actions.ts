@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { friendlyDatabaseError } from "@/lib/auth/errors";
-import { requireHousehold, requireMemberHome } from "@/lib/auth/session";
+import { patientScope, requireHousehold, requireMemberHome } from "@/lib/auth/session";
 import { doseMarkSchema, firstIssue, occurrenceMarkSchema, wellbeingCheckinSchema } from "@/lib/schemas";
 import { createClient } from "@/lib/supabase/server";
 
@@ -102,6 +102,7 @@ export async function createWellbeingCheckin(
   const supabase = await createClient();
   const { error } = await supabase.from("wellbeing_checkins").insert({
     household_id: context.membership.household.id,
+    patient_id: patientScope(context).patient_id,
     member_profile_id: context.userId,
     feeling: parsed.data.feeling,
     note: parsed.data.note || null,

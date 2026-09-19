@@ -69,6 +69,7 @@ export async function createCalendarEvent(
     .from("calendar_events")
     .insert({
       household_id: context.membership.household.id,
+      patient_id: context.activePatient.id,
       created_by: context.userId,
       title: parsed.data.title,
       kind: parsed.data.kind,
@@ -98,6 +99,7 @@ export async function createCalendarEvent(
         const { error: prepError } = await supabase.from("appointment_preparations").insert({
           event_id: data.id,
           household_id: context.membership.household.id,
+          patient_id: context.activePatient.id,
           ...payload,
         });
         if (prepError) {
@@ -133,6 +135,7 @@ export async function saveAppointmentPrep(
     {
       event_id: parsed.data.eventId,
       household_id: context.membership.household.id,
+      patient_id: context.activePatient.id,
       questions: parsed.data.questions || null,
       documents_to_bring: parsed.data.documentsToBring || null,
       transport_plan: parsed.data.transportPlan || null,

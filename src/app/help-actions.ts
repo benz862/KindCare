@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { friendlyDatabaseError } from "@/lib/auth/errors";
-import { requireCareTeam, requireMemberHome } from "@/lib/auth/session";
+import { patientScope, requireCareTeam, requireMemberHome } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 
 export type HelpFormState = {
@@ -25,11 +25,13 @@ export async function sendHelpAlert(): Promise<HelpFormState> {
   const supabase = await createClient();
   const householdId = context.membership.household.id;
   const householdName = context.membership.household.name;
+  const scope = patientScope(context);
 
   const { data: existing, error: existingError } = await supabase
     .from("help_alerts")
     .select("id, summary, created_at")
     .eq("household_id", householdId)
+    .eq("patient_id", scope.patient_id)
     .eq("member_profile_id", context.userId)
     .eq("status", "open")
     .order("created_at", { ascending: false })
@@ -52,6 +54,7 @@ export async function sendHelpAlert(): Promise<HelpFormState> {
     .from("contacts")
     .select("name, is_emergency, include_in_talk")
     .eq("household_id", householdId)
+    .eq("patient_id", scope.patient_id)
     .order("name");
 
   const contactNames = (contacts ?? [])
@@ -63,6 +66,7 @@ export async function sendHelpAlert(): Promise<HelpFormState> {
     .from("help_alerts")
     .insert({
       household_id: householdId,
+      patient_id: scope.patient_id,
       member_profile_id: context.userId,
       status: "open",
       summary,
@@ -96,6 +100,7 @@ export async function acknowledgeHelpAlert(formData: FormData) {
     })
     .eq("id", alertId)
     .eq("household_id", context.membership.household.id)
+    .eq("patient_id", context.activePatient.id)
     .eq("status", "open");
 
   if (error) {

@@ -6,10 +6,13 @@ import { ContactForm } from "@/components/household/contact-form";
 import { DeleteContactButton } from "@/components/household/delete-contact-button";
 import { HelpActionForm } from "@/components/household/help-action-form";
 import { HelpMailTemplates } from "@/components/household/help-mail-templates";
+import { AddPatientForm, PatientSetupInviteForm } from "@/components/patient/patient-forms";
 import { AppShell } from "@/components/layout/app-shell";
 import { Card } from "@/components/ui/card";
-import { requireCareTeam } from "@/lib/auth/session";
-import { canManagePlan, isHouseholdRole, isInviteRole, roleLabels } from "@/lib/roles";
+import { Button } from "@/components/ui/button";
+import { revokePatientSetupInvite } from "@/app/patient-actions";
+import { careShellProps, requireCareTeam } from "@/lib/auth/session";
+import { canManagePlan, isHouseholdRole, isInviteRole, patientRoleLabels, roleLabels } from "@/lib/roles";
 import { createClient } from "@/lib/supabase/server";
 import { brand } from "@/lib/copy";
 import { phoneHref, smsHref } from "@/lib/phone";
@@ -23,10 +26,10 @@ export default async function PeoplePage() {
   const canInvite =
     context.membership.role === "organizer" || context.membership.role === "caregiver";
   const canConfigureHelp = canManagePlan(context.membership.role);
-  const supported =
-    context.membership.household.supportedPersonName ?? "the person you support";
+  const supported = context.activePatient.displayName;
+  const patientId = context.activePatient.id;
 
-  const [{ data: members }, { data: invitations }, { data: profiles }, { data: contacts }] =
+  const [{ data: members }, { data: invitations }, { data: profiles }, { data: contacts }, { data: assignments }, { data: setupInvites }] =
     await Promise.all([
     supabase
       .from("household_members")
@@ -37,8 +40,9 @@ export default async function PeoplePage() {
     canInvite
       ? supabase
           .from("invitations")
-          .select("id, email, role, expires_at, accepted_at, revoked_at")
+          .select("id, email, role, expires_at, accepted_at, revoked_at, patient_id")
           .eq("household_id", householdId)
+          .eq("patient_id", patientId)
           .order("created_at", { ascending: false })
       : Promise.resolve({ data: [] }),
     supabase.from("profiles").select("id, display_name"),
@@ -46,7 +50,21 @@ export default async function PeoplePage() {
       .from("contacts")
       .select("id, name, phone, relationship, include_in_talk, is_emergency")
       .eq("household_id", householdId)
+      .eq("patient_id", patientId)
       .order("name"),
+    supabase
+      .from("patient_assignments")
+      .select("id, role, status, profile_id, patient_id")
+      .eq("patient_id", patientId)
+      .eq("status", "active"),
+    canInvite
+      ? supabase
+          .from("patient_setup_invites")
+          .select("id, phone, expires_at, accepted_at, revoked_at, created_at")
+          .eq("patient_id", patientId)
+          .order("created_at", { ascending: false })
+          .limit(8)
+      : Promise.resolve({ data: [] }),
   ]);
 
   const openInvites = (invitations ?? []).filter(
@@ -54,11 +72,7 @@ export default async function PeoplePage() {
   );
 
   return (
-    <AppShell
-      displayName={context.displayName}
-      role={context.membership.role}
-      householdName={context.membership.household.name}
-    >
+    <AppShell {...careShellProps(context)}>
       <p className="text-xs font-bold tracking-[0.16em] text-navy/60">PEOPLE</p>
       <h1 className="mt-3 font-serif text-4xl font-semibold text-navy">
         Trusted people in {context.membership.household.name}
@@ -69,6 +83,91 @@ export default async function PeoplePage() {
       </p>
 
       <div className="mt-8 grid gap-5">
+        <Card>
+          <h2 className="font-serif text-2xl font-semibold text-navy">Care recipients</h2>
+          <p className="mt-2 leading-7 text-ink/75">
+            Each person has a private care circle. A caregiver invited for one person cannot see
+            another person’s calendar, medications, messages, or conversations.
+          </p>
+          <ul className="mt-4 grid gap-3">
+            {context.patients.map((patient) => (
+              <li key={patient.id} className="rounded-2xl bg-mist px-4 py-3">
+                <p className="font-semibold text-navy">
+                  {patient.displayName}
+                  {patient.id === context.activePatient.id ? " (selected)" : ""}
+                </p>
+                <p className="text-sm text-navy/70">{patientRoleLabels[patient.role]}</p>
+              </li>
+            ))}
+          </ul>
+          {canInvite ? (
+            <div className="mt-5">
+              <AddPatientForm />
+            </div>
+          ) : null}
+        </Card>
+
+        <Card>
+          <h2 className="font-serif text-2xl font-semibold text-navy">Set up {supported}’s phone</h2>
+          <p className="mt-2 leading-7 text-ink/75">
+            Send a one-time setup link. {supported} opens it on their phone, taps Continue, and
+            uses Face ID or device unlock. KindCare never receives biometric data or a PIN. If they
+            change phones, revoke the old link and send a new one. Do not share a password.
+          </p>
+          {canInvite ? (
+            <div className="mt-5">
+              <PatientSetupInviteForm
+                patientId={patientId}
+                patientName={supported}
+                phone={context.activePatient.phone}
+              />
+            </div>
+          ) : null}
+          {(setupInvites ?? []).filter((invite) => !invite.accepted_at && !invite.revoked_at).length ? (
+            <ul className="mt-5 grid gap-3">
+              {(setupInvites ?? [])
+                .filter((invite) => !invite.accepted_at && !invite.revoked_at)
+                .map((invite) => (
+                  <li key={invite.id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-white px-4 py-3">
+                    <p className="text-sm text-navy/75">
+                      Open setup link · expires {new Date(invite.expires_at).toLocaleDateString()}
+                    </p>
+                    <form action={revokePatientSetupInvite}>
+                      <input type="hidden" name="inviteId" value={invite.id} />
+                      <Button type="submit" variant="secondary" size="compact">
+                        Revoke
+                      </Button>
+                    </form>
+                  </li>
+                ))}
+            </ul>
+          ) : null}
+        </Card>
+
+        <Card>
+          <h2 className="font-serif text-2xl font-semibold text-navy">Care circle for {supported}</h2>
+          <ul className="mt-4 grid gap-3">
+            {(assignments ?? []).map((assignment) => {
+              const profile = (profiles ?? []).find((item) => item.id === assignment.profile_id);
+              const roleLabel =
+                assignment.role in patientRoleLabels
+                  ? patientRoleLabels[assignment.role as keyof typeof patientRoleLabels]
+                  : assignment.role;
+              return (
+                <li
+                  key={assignment.id}
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-mist px-4 py-3"
+                >
+                  <span className="font-semibold text-navy">
+                    {profile?.display_name ?? "KindCare member"}
+                    {assignment.profile_id === context.userId ? " (you)" : ""}
+                  </span>
+                  <span className="text-sm text-navy/70">{roleLabel}</span>
+                </li>
+              );
+            })}
+          </ul>
+        </Card>
         <Card>
           <h2 className="font-serif text-2xl font-semibold text-navy">Household members</h2>
           <ul className="mt-4 grid gap-3">

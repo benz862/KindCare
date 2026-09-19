@@ -85,7 +85,7 @@ export default async function MessagesPage() {
         <Card>
           <h2 className="font-serif text-2xl font-semibold text-navy">New note</h2>
           <div className="mt-5">
-            <ComposeNote householdId={householdId} recipients={recipients} />
+            <ComposeNote patientId={context.activePatient.id} recipients={recipients} />
           </div>
         </Card>
 

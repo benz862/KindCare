@@ -67,6 +67,7 @@ export async function createRoutine(
   const supabase = await createClient();
   const { error } = await supabase.from("routines").insert({
     household_id: context.membership.household.id,
+    patient_id: context.activePatient.id,
     created_by: context.userId,
     assigned_to: parsed.data.assignedTo,
     title: parsed.data.title,
@@ -140,6 +141,7 @@ export async function createMedicationPlan(
   const supabase = await createClient();
   const { error } = await supabase.from("medication_plans").insert({
     household_id: context.membership.household.id,
+    patient_id: context.activePatient.id,
     created_by: context.userId,
     member_profile_id: parsed.data.memberProfileId,
     name: parsed.data.name,

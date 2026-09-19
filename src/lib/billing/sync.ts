@@ -70,6 +70,17 @@ export function invoiceSubscriptionId(invoice: Stripe.Invoice) {
   return subscriptionIdFrom(value);
 }
 
+export async function householdIdFromStripeCustomer(customerId: string | null) {
+  if (!customerId) return null;
+  const supabase = createServiceClient();
+  const { data } = await supabase
+    .from("subscriptions")
+    .select("household_id")
+    .eq("stripe_customer_id", customerId)
+    .maybeSingle();
+  return data?.household_id ?? null;
+}
+
 export async function syncStripeSubscription(
   subscription: Stripe.Subscription,
   extra?: { householdId?: string | null },
@@ -90,7 +101,7 @@ export async function syncStripeSubscription(
       : null);
 
   if (!householdId || !customerId) {
-    return;
+    return householdId ?? null;
   }
 
   const payload = {
@@ -125,4 +136,6 @@ export async function syncStripeSubscription(
       stripe_price_id: payload.stripe_price_id,
     },
   });
+
+  return householdId;
 }

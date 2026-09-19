@@ -27,8 +27,8 @@ export function extensionForAudioType(type: string) {
   return allowedTypes[normalizeAudioType(type)] ?? "";
 }
 
-export function voiceObjectPath(householdId: string, noteId: string, type: string) {
+export function voiceObjectPath(patientId: string, noteId: string, type: string) {
   const extension = extensionForAudioType(type);
   if (!extension) return null;
-  return `${householdId}/${noteId}.${extension}`;
+  return `${patientId}/${noteId}.${extension}`;
 }

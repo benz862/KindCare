@@ -46,6 +46,7 @@ export default async function CalendarPage({
   const canEdit = canEditCalendar(context.membership.role);
   const supabase = await createClient();
   const householdId = context.membership.household.id;
+  const patientId = context.activePatient?.id ?? null;
 
   const rangeStart =
     view === "month"
@@ -61,7 +62,7 @@ export default async function CalendarPage({
         : date;
 
   const [{ byDay }, people] = await Promise.all([
-    loadRangeItems(supabase, householdId, timeZone, rangeStart, rangeEnd),
+    loadRangeItems(supabase, householdId, timeZone, rangeStart, rangeEnd, patientId),
     loadHouseholdPeople(supabase, householdId),
   ]);
 

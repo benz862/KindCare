@@ -5,6 +5,7 @@ import { signOut } from "@/app/auth-actions";
 import { BrandMark } from "@/components/brand/brand-mark";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { Button } from "@/components/ui/button";
+import { PatientSwitcher } from "@/components/patient/patient-switcher";
 import type { HouseholdRole } from "@/lib/roles";
 import { isCareTeamRole, roleLabels } from "@/lib/roles";
 import { cn } from "@/lib/cn";
@@ -14,9 +15,20 @@ type AppShellProps = {
   displayName: string;
   role: HouseholdRole;
   householdName: string;
+  patients?: { id: string; displayName: string }[];
+  activePatientId?: string;
+  activePatientName?: string;
 };
 
-export function AppShell({ children, displayName, role, householdName }: AppShellProps) {
+export function AppShell({
+  children,
+  displayName,
+  role,
+  householdName,
+  patients = [],
+  activePatientId,
+  activePatientName,
+}: AppShellProps) {
   const careTeam = isCareTeamRole(role);
 
   return (
@@ -30,8 +42,12 @@ export function AppShell({ children, displayName, role, householdName }: AppShel
             <p className="text-sm text-navy/75">
               <span className="font-semibold text-navy">{displayName}</span>
               <span className="mx-2">·</span>
-              {roleLabels[role]} in {householdName}
+              {roleLabels[role]}
+              {activePatientName ? ` for ${activePatientName}` : ` in ${householdName}`}
             </p>
+            {careTeam && activePatientId ? (
+              <PatientSwitcher patients={patients} activePatientId={activePatientId} />
+            ) : null}
             <nav className="flex flex-wrap items-center gap-2">
               {careTeam ? (
                 <>

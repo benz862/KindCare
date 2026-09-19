@@ -36,58 +36,87 @@ export function hasAppointmentPrep(prep?: AppointmentPrep | null) {
   );
 }
 
+function forPatient<T extends { eq: (column: string, value: string) => T }>(
+  query: T,
+  patientId?: string | null,
+) {
+  return patientId ? query.eq("patient_id", patientId) : query;
+}
+
 export async function loadRangeItems(
   supabase: Client,
   householdId: string,
   timeZone: string,
   startYmd: string,
   endYmd: string,
+  patientId?: string | null,
 ) {
   const window = utcWindowForYmds(startYmd, endYmd);
   const [{ data: events }, { data: occurrences }, { data: doses }, { data: plans }, { data: routines }, { data: deliveries }, { data: notes }, { data: preps }] =
     await Promise.all([
-      supabase
-        .from("calendar_events")
-        .select("id, title, kind, starts_at, status, assigned_to, all_day")
-        .eq("household_id", householdId)
+      forPatient(
+        supabase
+          .from("calendar_events")
+          .select("id, title, kind, starts_at, status, assigned_to, all_day")
+          .eq("household_id", householdId),
+        patientId,
+      )
         .gte("starts_at", window.start)
         .lte("starts_at", window.end)
         .order("starts_at"),
-      supabase
-        .from("routine_occurrences")
-        .select("id, due_at, status, assigned_to, routine_id")
-        .eq("household_id", householdId)
+      forPatient(
+        supabase
+          .from("routine_occurrences")
+          .select("id, due_at, status, assigned_to, routine_id")
+          .eq("household_id", householdId),
+        patientId,
+      )
         .gte("due_at", window.start)
         .lte("due_at", window.end)
         .order("due_at"),
-      supabase
-        .from("medication_doses")
-        .select("id, due_at, status, member_profile_id, plan_id, marked_at, marked_by, caregiver_note")
-        .eq("household_id", householdId)
+      forPatient(
+        supabase
+          .from("medication_doses")
+          .select("id, due_at, status, member_profile_id, plan_id, marked_at, marked_by, caregiver_note")
+          .eq("household_id", householdId),
+        patientId,
+      )
         .gte("due_at", window.start)
         .lte("due_at", window.end)
         .order("due_at"),
-      supabase
-        .from("medication_plans")
-        .select("id, name, amount_text, strength_label, reminder_text")
-        .eq("household_id", householdId),
-      supabase
-        .from("routines")
-        .select("id, title, kind")
-        .eq("household_id", householdId),
-      supabase
-        .from("scheduled_deliveries")
-        .select("id, deliver_at, status, voice_note_id")
-        .eq("household_id", householdId)
+      forPatient(
+        supabase
+          .from("medication_plans")
+          .select("id, name, amount_text, strength_label, reminder_text")
+          .eq("household_id", householdId),
+        patientId,
+      ),
+      forPatient(
+        supabase.from("routines").select("id, title, kind").eq("household_id", householdId),
+        patientId,
+      ),
+      forPatient(
+        supabase
+          .from("scheduled_deliveries")
+          .select("id, deliver_at, status, voice_note_id")
+          .eq("household_id", householdId),
+        patientId,
+      )
         .neq("status", "canceled")
         .gte("deliver_at", window.start)
         .lte("deliver_at", window.end)
         .order("deliver_at"),
-      supabase.from("voice_notes").select("id, title").eq("household_id", householdId),
-      supabase
-        .from("appointment_preparations")
-        .select("event_id, questions, documents_to_bring, transport_plan, follow_up_tasks")
-        .eq("household_id", householdId),
+      forPatient(
+        supabase.from("voice_notes").select("id, title").eq("household_id", householdId),
+        patientId,
+      ),
+      forPatient(
+        supabase
+          .from("appointment_preparations")
+          .select("event_id, questions, documents_to_bring, transport_plan, follow_up_tasks")
+          .eq("household_id", householdId),
+        patientId,
+      ),
     ]);
 
   const routineTitle = (id: string) =>

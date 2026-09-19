@@ -109,6 +109,7 @@ export async function createInvitation(
     p_household_id: context.membership.household.id,
     p_email: parsed.data.email,
     p_role: parsed.data.role,
+    p_patient_id: context.activePatient.id,
   });
 
   if (error) {

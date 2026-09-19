@@ -57,7 +57,7 @@ export default async function MomentsPage() {
         <Card>
           <h2 className="font-serif text-2xl font-semibold text-navy">Add a moment</h2>
           <div className="mt-5">
-            <ComposeMoment householdId={householdId} authorId={context.userId} />
+            <ComposeMoment patientId={context.activePatient?.id ?? householdId} authorId={context.userId} />
           </div>
         </Card>
         <Card>

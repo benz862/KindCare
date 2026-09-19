@@ -31,6 +31,23 @@ export const updatePasswordSchema = z.object({
   password: passwordSchema,
 });
 
+export const patientSchema = z.object({
+  displayName: z
+    .string()
+    .trim()
+    .min(1, "Enter the name of the person you support.")
+    .max(80, "Use a shorter name."),
+  phone: z
+    .string()
+    .trim()
+    .max(30, "Use a shorter phone number.")
+    .optional()
+    .refine(
+      (value) => !value || value.length === 0 || (value.length >= 7 && value.length <= 30),
+      "Enter a phone number you can text.",
+    ),
+});
+
 export const householdSchema = z.object({
   name: z
     .string()

@@ -25,11 +25,11 @@ type Recipient = {
 };
 
 export function ComposeNote({
-  householdId,
+  patientId,
   recipients,
   memberReply = false,
 }: {
-  householdId: string;
+  patientId: string;
   recipients: Recipient[];
   memberReply?: boolean;
 }) {
@@ -61,7 +61,7 @@ export function ComposeNote({
           return;
         }
         const noteId = crypto.randomUUID();
-        const path = voiceObjectPath(householdId, noteId, type);
+        const path = voiceObjectPath(patientId, noteId, type);
         if (!path) {
           setError("That recording could not be saved.");
           setPending(false);

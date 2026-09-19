@@ -13,7 +13,7 @@ import { DayItemList } from "@/components/plan/day-item-list";
 import { ResolveRequestButton } from "@/components/plan/plan-buttons";
 import { Card } from "@/components/ui/card";
 import { ButtonLink } from "@/components/ui/button";
-import { requireCareTeam } from "@/lib/auth/session";
+import { careShellProps, requireCareTeam } from "@/lib/auth/session";
 import { loadHouseholdSubscription } from "@/lib/billing/subscription";
 import { runDueDeliveries } from "@/lib/connection";
 import { brand } from "@/lib/copy";
@@ -30,29 +30,33 @@ export default async function TodayPage() {
   await runDueDeliveries();
   const supabase = await createClient();
   const householdId = context.membership.household.id;
-  const timeZone = context.membership.household.timezone;
-  const supported = context.membership.household.supportedPersonName ?? "the person you support";
+  const patientId = context.activePatient.id;
+  const timeZone = context.activePatient.timezone || context.membership.household.timezone;
+  const supported = context.activePatient.displayName;
   const today = ymdInZone(new Date(), timeZone);
   const canEdit = canManagePlan(context.membership.role);
 
   const [{ byDay }, { data: deliveries }, { data: notes }, { data: alerts }, { data: profiles }, { data: requests }, { data: notices }, subscription] =
     await Promise.all([
-      loadRangeItems(supabase, householdId, timeZone, today, today),
+      loadRangeItems(supabase, householdId, timeZone, today, today, patientId),
       supabase
         .from("scheduled_deliveries")
         .select("id, deliver_at, status, listened_at, recurrence, voice_note_id")
         .eq("household_id", householdId)
+        .eq("patient_id", patientId)
         .neq("status", "canceled")
         .order("deliver_at")
         .limit(50),
       supabase
         .from("voice_notes")
         .select("id, title, body_text, author_id, recipient_id")
-        .eq("household_id", householdId),
+        .eq("household_id", householdId)
+        .eq("patient_id", patientId),
       supabase
         .from("help_alerts")
         .select("id, created_at, status, member_profile_id, summary")
         .eq("household_id", householdId)
+        .eq("patient_id", patientId)
         .eq("status", "open")
         .order("created_at", { ascending: false }),
       supabase.from("profiles").select("id, display_name"),
@@ -60,6 +64,7 @@ export default async function TodayPage() {
         .from("member_requests")
         .select("id, kind, label, message, created_at, member_profile_id, status")
         .eq("household_id", householdId)
+        .eq("patient_id", patientId)
         .eq("status", "open")
         .order("created_at", { ascending: false }),
       supabase
@@ -75,23 +80,27 @@ export default async function TodayPage() {
         .from("wellbeing_checkins")
         .select("id, feeling, note, created_at, member_profile_id")
         .eq("household_id", householdId)
+        .eq("patient_id", patientId)
         .order("created_at", { ascending: false })
         .limit(5),
       supabase
         .from("handoffs")
         .select("id, body, author_id, created_at")
         .eq("household_id", householdId)
+        .eq("patient_id", patientId)
         .order("created_at", { ascending: false })
         .limit(8),
       supabase
         .from("handoff_assignments")
         .select("id, handoff_id, title, assigned_to, done")
         .eq("household_id", householdId)
+        .eq("patient_id", patientId)
         .order("created_at", { ascending: false }),
       supabase
         .from("handoff_acks")
         .select("handoff_id, profile_id")
-        .eq("household_id", householdId),
+        .eq("household_id", householdId)
+        .eq("patient_id", patientId),
       loadHouseholdPeople(supabase, householdId),
     ]);
 
@@ -109,14 +118,10 @@ export default async function TodayPage() {
   const latestCheckin = checkins?.[0] ?? null;
 
   return (
-    <AppShell
-      displayName={context.displayName}
-      role={context.membership.role}
-      householdName={context.membership.household.name}
-    >
+    <AppShell {...careShellProps(context)}>
       <p className="text-xs font-bold tracking-[0.16em] text-navy/60">TODAY</p>
       <h1 className="mt-3 font-serif text-4xl font-semibold text-navy">
-        A calm view for {context.membership.household.name}
+        A calm view for {supported}
       </h1>
       <p className="mt-3 max-w-2xl leading-7 text-ink/75">
         {supported} has {dayItems.length === 0
