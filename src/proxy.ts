@@ -2,6 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 import type { Database } from "@/lib/supabase/database.types";
+import { isOwnerAppPath } from "@/lib/auth/owner";
 
 const publicPrefixes = [
   "/",
@@ -12,6 +13,7 @@ const publicPrefixes = [
   "/terms",
   "/setup",
   "/invite",
+  "/owner/sign-in",
   "/auth/callback",
   "/api/stripe",
 ];
@@ -32,7 +34,7 @@ export async function proxy(request: NextRequest) {
       return NextResponse.next({ request });
     }
     const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = "/sign-in";
+    redirectUrl.pathname = isOwnerAppPath(pathname) ? "/owner/sign-in" : "/sign-in";
     redirectUrl.searchParams.set("next", pathname);
     return NextResponse.redirect(redirectUrl);
   }
@@ -64,7 +66,7 @@ export async function proxy(request: NextRequest) {
 
   if (!signedIn && !isPublicPath(pathname)) {
     const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = "/sign-in";
+    redirectUrl.pathname = isOwnerAppPath(pathname) ? "/owner/sign-in" : "/sign-in";
     redirectUrl.searchParams.set("next", pathname);
     return NextResponse.redirect(redirectUrl);
   }

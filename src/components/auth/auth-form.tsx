@@ -56,7 +56,6 @@ export function SignInForm({
           name="password"
           type="password"
           autoComplete="current-password"
-          minLength={12}
           required
         />
       </Field>

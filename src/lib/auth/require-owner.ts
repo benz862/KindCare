@@ -1,13 +1,13 @@
 import { notFound, redirect } from "next/navigation";
 
-import { isKindCareOwner } from "@/lib/auth/owner";
+import { isKindCareOwner, ownerSignInHref } from "@/lib/auth/owner";
 import { getHouseholdContext } from "@/lib/auth/session";
 import { createServiceClient } from "@/lib/supabase/admin";
 
 export async function requireOwner() {
   const context = await getHouseholdContext();
   if (!context) {
-    redirect("/sign-in?next=/owner");
+    redirect(ownerSignInHref("/owner"));
   }
   if (!isKindCareOwner(context.email)) {
     notFound();

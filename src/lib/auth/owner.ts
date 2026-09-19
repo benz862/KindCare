@@ -15,3 +15,11 @@ export function isKindCareOwner(
   if (!ownerEmail || !email) return false;
   return email.trim().toLowerCase() === ownerEmail;
 }
+
+export function isOwnerAppPath(pathname: string) {
+  return pathname === "/owner" || pathname.startsWith("/owner/");
+}
+
+export function ownerSignInHref(next = "/owner") {
+  return `/owner/sign-in?next=${encodeURIComponent(next)}`;
+}

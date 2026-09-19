@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
+import { isKindCareOwner } from "@/lib/auth/owner";
 import {
   homePathForRole,
   isCareTeamRole,
@@ -212,8 +213,11 @@ export async function resolveSignedInPath(preferredNext?: string | null) {
   if (preferredNext?.startsWith("/invite/") || preferredNext?.startsWith("/setup/")) {
     return preferredNext;
   }
-  if (preferredNext === "/update-password" || preferredNext === "/owner") {
+  if (preferredNext === "/update-password") {
     return preferredNext;
+  }
+  if (preferredNext === "/owner" || preferredNext?.startsWith("/owner/")) {
+    return isKindCareOwner(context.email) ? preferredNext : homePathForRole(context.membership?.role ?? null);
   }
   if (context.activePatient?.role === "patient") return "/home";
   return homePathForRole(context.membership?.role ?? null);

@@ -8,7 +8,7 @@ export const passwordSchema = z
 
 export const signInSchema = z.object({
   email: z.email("Enter a valid email."),
-  password: passwordSchema,
+  password: z.string().min(1, "Enter your password."),
   next: z.string().optional(),
 });
 

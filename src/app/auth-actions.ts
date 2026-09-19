@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 
 import { getAppUrl, safeNextPath } from "@/lib/app-url";
 import { friendlyAuthError } from "@/lib/auth/errors";
+import { isKindCareOwner } from "@/lib/auth/owner";
 import { resolveSignedInPath } from "@/lib/auth/session";
 import {
   emailSchema,
@@ -48,6 +49,44 @@ export async function requestSignIn(
   }
 
   redirect(await resolveSignedInPath(safeNextPath(parsed.data.next, "/today")));
+}
+
+export async function requestOwnerSignIn(
+  _: AuthFormState,
+  formData: FormData,
+): Promise<AuthFormState> {
+  const parsed = signInSchema.safeParse({
+    email: formValue(formData, "email").trim(),
+    password: formValue(formData, "password"),
+    next: formValue(formData, "next") || undefined,
+  });
+
+  if (!parsed.success) {
+    return { error: firstIssue(parsed.error) };
+  }
+
+  const nextPath = safeNextPath(parsed.data.next, "/owner");
+  const ownerNext =
+    nextPath === "/owner" || (nextPath.startsWith("/owner/") && !nextPath.startsWith("/owner/sign-in"))
+      ? nextPath
+      : "/owner";
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.signInWithPassword({
+    email: parsed.data.email,
+    password: parsed.data.password,
+  });
+
+  if (error) {
+    return { error: friendlyAuthError(error.message) };
+  }
+
+  if (!isKindCareOwner(parsed.data.email)) {
+    await supabase.auth.signOut();
+    return { error: "That sign-in is not for this page." };
+  }
+
+  redirect(ownerNext);
 }
 
 export async function requestSignUp(
